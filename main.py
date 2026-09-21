@@ -1,7 +1,21 @@
 from flask import Flask, request, jsonify
 import json, os
+import requests
 
 app = Flask(__name__)
+
+# 🔍 Search function (simple)
+def search_online(query):
+    try:
+        url = f"https://api.duckduckgo.com/?q={query}&format=json"
+        res = requests.get(url).json()
+
+        if res.get("AbstractText"):
+            return res["AbstractText"]
+        else:
+            return "Online lo clear ga dorakaledhu bro 😅"
+    except:
+        return "Search error bro 😓"
 
 @app.route("/")
 def home():
@@ -22,15 +36,24 @@ def chat():
         except:
             brain = {}
 
+    # ✅ Step 1: Memory check
     if msg in brain:
         return jsonify({"reply": brain[msg]})
 
+    # ✅ Step 2: Basic replies
     if "hi" in msg:
         reply = "Hello bro 😎"
     elif "siri" in msg:
         reply = "😏 Siri garu topic aa?"
+
+    # ✅ Step 3: Search online
     else:
-        reply = "Nak teliyadhu bro 😅"
+        reply = search_online(msg)
+
+        # ✅ Step 4: Save (auto learn)
+        brain[msg] = reply
+        with open(FILE, "w") as f:
+            json.dump(brain, f)
 
     return jsonify({"reply": reply})
 

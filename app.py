@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import json, os
 
 app = Flask(__name__)
 
@@ -83,6 +84,14 @@ button {
 
 <script>
 
+// 🔐 unique user id
+let userId = localStorage.getItem("uid");
+
+if (!userId) {
+    userId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+    localStorage.setItem("uid", userId);
+}
+
 let chatDiv = document.getElementById("chat");
 
 function addMsg(text, cls) {
@@ -128,10 +137,11 @@ function sendMsg() {
 
     addMsg(msg, "user");
     input.value = "";
+    input.focus();
 
     showTyping();
 
-    fetch("/chat?msg=" + msg)
+    fetch("/chat?msg=" + encodeURIComponent(msg) + "&uid=" + userId)
     .then(res => res.json())
     .then(data => {
         removeTyping();
@@ -139,7 +149,7 @@ function sendMsg() {
     });
 }
 
-// ENTER key send
+// enter key send
 document.getElementById("msg").addEventListener("keypress", function(e){
     if(e.key === "Enter"){
         sendMsg();
@@ -155,7 +165,46 @@ document.getElementById("msg").addEventListener("keypress", function(e){
 @app.route("/chat")
 def chat():
     msg = request.args.get("msg", "").lower()
+    user_id = request.args.get("uid", "default")
 
+    FILE = f"brain_{user_id}.json"
+    LAST = f"last_{user_id}.txt"
+
+    # safe load brain
+    brain = {}
+    if os.path.exists(FILE):
+        try:
+            with open(FILE, "r") as f:
+                brain = json.load(f)
+        except:
+            brain = {}
+
+    # load last question
+    last_question = ""
+    if os.path.exists(LAST):
+        with open(LAST, "r") as f:
+            last_question = f.read()
+
+    # 🧠 teaching
+    if msg.startswith("teach:"):
+        answer = msg.replace("teach:", "").strip()
+
+        if last_question:
+            brain[last_question] = answer
+
+            with open(FILE, "w") as f:
+                json.dump(brain, f)
+
+            return jsonify({"reply": "Nerchukunna bro 🔥"})
+        else:
+            return jsonify({"reply": "Em nerpinchalo ardham kaledhu bro 😅"})
+
+    # 🧠 learned replies
+    for key in brain:
+        if key == msg or key in msg:
+            return jsonify({"reply": brain[key]})
+
+    # 💬 default replies
     if "hi" in msg:
         reply = "Hello bro 🔥 ela unnav?"
     elif "siri" in msg:
@@ -163,7 +212,10 @@ def chat():
     elif "love" in msg:
         reply = "slow ga vellali bro… respect important ❤️"
     else:
-        reply = "Hmm bro 🤔 inkonchem cheppu"
+        reply = "Nak teliyadhu bro 😅 naku nerpinchu (type: teach: your reply)"
+
+        with open(LAST, "w") as f:
+            f.write(msg)
 
     return jsonify({"reply": reply})
 

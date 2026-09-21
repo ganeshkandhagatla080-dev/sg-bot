@@ -8,18 +8,29 @@ app = Flask(__name__)
 # 🌐 Online Search (Improved)
 def search_online(query):
     try:
+        # 1️⃣ DuckDuckGo try
         url = f"https://api.duckduckgo.com/?q={query}&format=json"
         res = requests.get(url).json()
 
         if res.get("AbstractText"):
             return res["AbstractText"]
 
-        elif res.get("RelatedTopics"):
+        if res.get("RelatedTopics"):
             topics = res["RelatedTopics"]
             if len(topics) > 0:
-                return topics[0].get("Text", "dorakaledhu bro 😅")
+                text = topics[0].get("Text", "")
+                if text:
+                    return text
 
-        return "Online lo clear ga dorakaledhu bro 😅"
+        # 2️⃣ Wikipedia fallback 🔥 (VERY STRONG)
+        wiki_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{query}"
+        wiki = requests.get(wiki_url).json()
+
+        if wiki.get("extract"):
+            return wiki["extract"]
+
+        # 3️⃣ Final fallback
+        return f"{query} gurinchi konchem clear info dorakaledhu bro 😅"
 
     except:
         return "Search error bro 😓"

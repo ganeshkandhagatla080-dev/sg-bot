@@ -30,7 +30,7 @@ def brain_reply(msg, brain):
         return brain[msg]
 
     # ✅ Basic replies
-    if "hi" in msg:
+    elif "hi" in msg:
         return "Hello bro 😎"
     elif "siri" in msg:
         return "😏 Siri garu topic aa?"

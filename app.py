@@ -13,8 +13,8 @@ def home():
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
 
+<style>
 body {
     margin: 0;
     background: #343541;
@@ -75,24 +75,11 @@ button {
     from {opacity: 0; transform: translateY(10px);}
     to {opacity: 1; transform: translateY(0);}
 }
-
 </style>
+
 </head>
 
 <body>
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-
-// 👇 nee code
-let chatDiv = document.getElementById("chat");
-
-function sendMsg() {
-   // existing code
-}
-
-</script>
 
 <div class="chat" id="chat"></div>
 
@@ -103,6 +90,7 @@ function sendMsg() {
 
 <script>
 
+// 🔥 Firebase config (ONLY ONCE)
 const firebaseConfig = {
   apiKey: "AIzaSyCOOle74AFX1tWH7X_ESb1e2DXTA5MgHro",
   authDomain: "sg-bot-1e220.firebaseapp.com",
@@ -140,7 +128,6 @@ function showTyping() {
     div.id = "typing";
     div.innerText = "typing...";
     chatDiv.appendChild(div);
-    chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
 function removeTyping() {
@@ -157,7 +144,6 @@ function typeEffect(text) {
     let interval = setInterval(() => {
         div.innerText += text[i];
         i++;
-        chatDiv.scrollTop = chatDiv.scrollHeight;
         if (i >= text.length) clearInterval(interval);
     }, 20);
 }
@@ -169,7 +155,6 @@ function sendMsg() {
 
     addMsg(msg, "user");
     input.value = "";
-    input.focus();
 
     showTyping();
 
@@ -181,7 +166,6 @@ function sendMsg() {
     });
 }
 
-// enter key send
 document.getElementById("msg").addEventListener("keypress", function(e){
     if(e.key === "Enter"){
         sendMsg();
@@ -202,7 +186,6 @@ def chat():
     FILE = f"brain_{user_id}.json"
     LAST = f"last_{user_id}.txt"
 
-    # safe load brain
     brain = {}
     if os.path.exists(FILE):
         try:
@@ -211,13 +194,11 @@ def chat():
         except:
             brain = {}
 
-    # load last question
     last_question = ""
     if os.path.exists(LAST):
         with open(LAST, "r") as f:
             last_question = f.read()
 
-    # 🧠 teaching
     if msg.startswith("teach:"):
         answer = msg.replace("teach:", "").strip()
 
@@ -231,12 +212,10 @@ def chat():
         else:
             return jsonify({"reply": "Em nerpinchalo ardham kaledhu bro 😅"})
 
-    # 🧠 learned replies
     for key in brain:
         if key == msg or key in msg:
             return jsonify({"reply": brain[key]})
 
-    # 💬 default replies
     if "hi" in msg:
         reply = "Hello bro 🔥 ela unnav?"
     elif "siri" in msg:

@@ -1,86 +1,115 @@
 from flask import Flask, request, jsonify
-import json, os
-import requests
-import time
+import json, os, requests
 
 app = Flask(__name__)
 
-# 🌐 Online Search (Improved)
+# =========================
+# 🧠 MEMORY
+# =========================
+def load_brain(file):
+    if os.path.exists(file):
+        try:
+            with open(file, "r") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_brain(file, brain):
+    with open(file, "w") as f:
+        json.dump(brain, f)
+
+# =========================
+# 🌐 SEARCH
+# =========================
 def search_online(query):
     try:
-        url = "https://serpapi.com/search"
-        params = {
-            "q": query,
-            "api_key": "YOUR_API_KEY"
-        }
-        res = requests.get(url, params=params).json()
+        url = f"https://api.duckduckgo.com/?q={query}&format=json&no_html=1&skip_disambig=1"
+        res = requests.get(url).json()
 
-        if "organic_results" in res:
-            return res["organic_results"][0]["snippet"]
-        else:
-            return "Search lo dorakaledhu bro 😅"
+        if res.get("AbstractText"):
+            return res["AbstractText"]
+
+        if res.get("Answer"):
+            return res["Answer"]
+
+        if res.get("RelatedTopics"):
+            for item in res["RelatedTopics"]:
+                if isinstance(item, dict) and item.get("Text"):
+                    return item["Text"]
+
+        return None
     except:
-        return "Search error bro 😓"
+        return None
 
+# =========================
+# 🤖 REPLY
+# =========================
+def generate_reply(msg):
+    msg = msg.lower().strip()
 
-# 🧠 Brain Logic
-def brain_reply(msg, brain):
-    # ✅ Memory check
-    if msg in brain:
-        return brain[msg]
+    if msg == "hi":
+        return "Hello bro 😎 ela unnava?"
 
-    # ✅ Basic replies
-    elif "hi" in msg:
-        return "Hello bro 😎"
-    elif "siri" in msg:
-        return "😏 Siri garu topic aa?"
-    elif "how are you" in msg:
-        return "Super bro 😄 nuvvu ela unnav?"
+    if msg == "hello":
+        return "Hey bro 🔥 em chesthunav?"
 
-    # 🌐 Online fallback
-    return search_online(msg)
+    if "who are you" in msg:
+        return "Nenu SG Bot bro 🤖 neeku help cheyadaniki ready"
 
+    if "siri" in msg:
+        return "😏 Siri garu topic aa bro?"
 
-# 🏠 Home Route
-@app.route("/")
-def home():
-    return "S-GPT Running 🔥"
+    # 🌐 fallback search
+    result = search_online(msg)
 
+    if result:
+        return f"{result}\n\n👉 Simple ga cheppali ante bro 😄"
 
-# 💬 Chat API (POST method)
-@app.route("/chat", methods=["POST"])
+    return "Hmm bro 🤔 naku clear ga teliyadhu 😅 nuv explain chesthava?"
+
+# =========================
+# 🚀 CHAT
+# =========================
+@app.route("/chat")
 def chat():
-    data = request.json
-
-    msg = data.get("message", "").lower()
-    user_id = data.get("uid", "default")
+    msg = request.args.get("msg", "")
+    user_id = request.args.get("uid", "default")
 
     FILE = f"brain_{user_id}.json"
 
-    # 📂 Load memory
-    brain = {}
-    if os.path.exists(FILE):
-        try:
-            with open(FILE, "r") as f:
-                brain = json.load(f)
-        except:
-            brain = {}
+    brain = load_brain(FILE)
 
-    # 🧠 Get reply
-    reply = brain_reply(msg, brain)
+    if msg in brain:
+        return jsonify({"reply": brain[msg]})
 
-    # 💾 Save learning
+    reply = generate_reply(msg)
+
     brain[msg] = reply
-    with open(FILE, "w") as f:
-        json.dump(brain, f)
-
-    # ⏳ Small delay (typing feel)
-    time.sleep(0.5)
+    save_brain(FILE, brain)
 
     return jsonify({"reply": reply})
 
+# =========================
+# 🎤 VOICE
+# =========================
+@app.route("/voice", methods=["POST"])
+def voice():
+    data = request.json
+    text = data.get("text", "")
 
-# ▶ Run server
+    reply = generate_reply(text)
+    return jsonify({"reply": reply})
+
+# =========================
+# 🏠 HOME
+# =========================
+@app.route("/")
+def home():
+    return "SG BOT RUNNING 🔥"
+
+# =========================
+# ▶ RUN
+# =========================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-    # trigger update v2

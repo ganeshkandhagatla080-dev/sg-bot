@@ -30,6 +30,8 @@ body {
     margin: 8px;
     border-radius: 10px;
     animation: fadeIn 0.3s ease-in;
+    white-space: pre-wrap;
+    line-height: 1.5;
 }
 
 .user {

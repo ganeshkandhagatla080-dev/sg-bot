@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify
 import json, os
 import requests
+import time
 
 app = Flask(__name__)
 
-# 🔍 Search function (simple)
+# 🌐 Online Search (Improved)
 def search_online(query):
     try:
         url = f"https://api.duckduckgo.com/?q={query}&format=json"
@@ -12,22 +13,53 @@ def search_online(query):
 
         if res.get("AbstractText"):
             return res["AbstractText"]
-        else:
-            return "Online lo clear ga dorakaledhu bro 😅"
+
+        elif res.get("RelatedTopics"):
+            topics = res["RelatedTopics"]
+            if len(topics) > 0:
+                return topics[0].get("Text", "dorakaledhu bro 😅")
+
+        return "Online lo clear ga dorakaledhu bro 😅"
+
     except:
         return "Search error bro 😓"
 
+
+# 🧠 Brain Logic
+def brain_reply(msg, brain):
+    # ✅ Memory check
+    if msg in brain:
+        return brain[msg]
+
+    # ✅ Basic replies
+    if "hi" in msg:
+        return "Hello bro 😎"
+    elif "siri" in msg:
+        return "😏 Siri garu topic aa?"
+    elif "how are you" in msg:
+        return "Super bro 😄 nuvvu ela unnav?"
+
+    # 🌐 Online fallback
+    return search_online(msg)
+
+
+# 🏠 Home Route
 @app.route("/")
 def home():
     return "S-GPT Running 🔥"
 
-@app.route("/chat")
+
+# 💬 Chat API (POST method)
+@app.route("/chat", methods=["POST"])
 def chat():
-    msg = request.args.get("msg", "").lower()
-    user_id = request.args.get("uid", "default")
+    data = request.json
+
+    msg = data.get("message", "").lower()
+    user_id = data.get("uid", "default")
 
     FILE = f"brain_{user_id}.json"
 
+    # 📂 Load memory
     brain = {}
     if os.path.exists(FILE):
         try:
@@ -36,26 +68,20 @@ def chat():
         except:
             brain = {}
 
-    # ✅ Step 1: Memory check
-    if msg in brain:
-        return jsonify({"reply": brain[msg]})
+    # 🧠 Get reply
+    reply = brain_reply(msg, brain)
 
-    # ✅ Step 2: Basic replies
-    if "hi" in msg:
-        reply = "Hello bro 😎"
-    elif "siri" in msg:
-        reply = "😏 Siri garu topic aa?"
+    # 💾 Save learning
+    brain[msg] = reply
+    with open(FILE, "w") as f:
+        json.dump(brain, f)
 
-    # ✅ Step 3: Search online
-    else:
-        reply = search_online(msg)
-
-        # ✅ Step 4: Save (auto learn)
-        brain[msg] = reply
-        with open(FILE, "w") as f:
-            json.dump(brain, f)
+    # ⏳ Small delay (typing feel)
+    time.sleep(0.5)
 
     return jsonify({"reply": reply})
 
+
+# ▶ Run server
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

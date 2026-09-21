@@ -70,6 +70,11 @@ button {
     color: white;
     border: none;
 }
+
+@keyframes fadeIn {
+    from {opacity: 0; transform: translateY(10px);}
+    to {opacity: 1; transform: translateY(0);}
+}
 </style>
 
 </head>
@@ -108,7 +113,7 @@ if (!userId) {
 
 let chatDiv = document.getElementById("chat");
 
-// 🔹 add message
+// add message
 function addMsg(text, cls) {
     let div = document.createElement("div");
     div.className = "msg " + cls;
@@ -117,7 +122,7 @@ function addMsg(text, cls) {
     chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
-// 🔹 typing
+// typing
 function showTyping() {
     let div = document.createElement("div");
     div.className = "msg bot";
@@ -132,7 +137,7 @@ function removeTyping() {
     if (t) t.remove();
 }
 
-// 🔹 type effect
+// type effect
 function typeEffect(text) {
     let div = document.createElement("div");
     div.className = "msg bot";
@@ -147,36 +152,8 @@ function typeEffect(text) {
     }, 20);
 }
 
-// 🔥 send message
-function sendMsg() {
-    let input = document.getElementById("msg");
-    let msg = input.value.trim();
-    if (!msg) return;
-
-    input.value = "";
-
-    // 🔍 first Firestore lo check chey
-    db.collection("brain")
-      .doc(userId)
-      .collection("pairs")
-      .get()
-      .then(snapshot => {
-
-          let found = false;
-
-          snapshot.forEach(doc => {
-              let d = doc.data();
-
-              if (msg.includes(d.question)) {
-                  addMsg(msg, "user");
-                  typeEffect(d.answer);
-                  found = true;
-              }
-          });
-
-          if (!found) {
-              callBackend(msg);
-              function callBackend(msg){
+// ✅ backend call (OUTSIDE)
+function callBackend(msg){
     addMsg(msg, "user");
     showTyping();
 
@@ -186,16 +163,7 @@ function sendMsg() {
         removeTyping();
         typeEffect(data.reply);
 
-        // 🧠 save to Firestore
-        db.collection("brain")
-          .doc(userId)
-          .collection("pairs")
-          .add({
-              question: msg,
-              answer: data.reply
-          });
-
-        // 💬 save messages
+        // save messages
         db.collection("users")
           .doc(userId)
           .collection("messages")
@@ -206,45 +174,45 @@ function sendMsg() {
           });
 
         db.collection("users")
-  .doc(userId)
-  .collection("messages")
-  .orderBy("time")
-  .get()
-  .then(snapshot => {
-
-      chatDiv.innerHTML = "";
-
-      let seen = new Set();
-
-      snapshot.forEach(doc => {
-          let d = doc.data();
-          let key = d.text + d.time;
-
-          if (!seen.has(key)) {
-              addMsg(d.text, d.type);
-              seen.add(key);
-          }
-      });
-
-      chatDiv.scrollTop = chatDiv.scrollHeight;
-  });
-          }
-      });
-}
+          .doc(userId)
+          .collection("messages")
+          .add({
+              text: data.reply,
+              type: "bot",
+              time: Date.now()
+          });
+    })
+    .catch(err => {
+        removeTyping();
+        addMsg("Error bro 😅", "bot");
+        console.log(err);
     });
 }
 
-// 🔥 load old chats
+// ✅ send message
+function sendMsg() {
+    let input = document.getElementById("msg");
+    let msg = input.value.trim();
+    if (!msg) return;
+
+    input.value = "";
+
+    callBackend(msg);
+}
+
+// ✅ load history (correct)
 db.collection("users")
   .doc(userId)
   .collection("messages")
   .orderBy("time")
   .get()
   .then(snapshot => {
+      chatDiv.innerHTML = "";
       snapshot.forEach(doc => {
           let d = doc.data();
           addMsg(d.text, d.type);
       });
+      chatDiv.scrollTop = chatDiv.scrollHeight;
   });
 
 // enter key

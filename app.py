@@ -70,11 +70,6 @@ button {
     color: white;
     border: none;
 }
-
-@keyframes fadeIn {
-    from {opacity: 0; transform: translateY(10px);}
-    to {opacity: 1; transform: translateY(0);}
-}
 </style>
 
 </head>
@@ -90,7 +85,7 @@ button {
 
 <script>
 
-// 🔥 Firebase config (ONLY ONCE)
+// 🔥 Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCOOle74AFX1tWH7X_ESb1e2DXTA5MgHro",
   authDomain: "sg-bot-1e220.firebaseapp.com",
@@ -104,9 +99,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 🔐 unique user id
+// 🔐 user id
 let userId = localStorage.getItem("uid");
-
 if (!userId) {
     userId = Date.now().toString(36) + Math.random().toString(36).substring(2);
     localStorage.setItem("uid", userId);
@@ -114,6 +108,7 @@ if (!userId) {
 
 let chatDiv = document.getElementById("chat");
 
+// 🔹 add message
 function addMsg(text, cls) {
     let div = document.createElement("div");
     div.className = "msg " + cls;
@@ -122,12 +117,14 @@ function addMsg(text, cls) {
     chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
+// 🔹 typing
 function showTyping() {
     let div = document.createElement("div");
     div.className = "msg bot";
     div.id = "typing";
     div.innerText = "typing...";
     chatDiv.appendChild(div);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
 function removeTyping() {
@@ -135,6 +132,7 @@ function removeTyping() {
     if (t) t.remove();
 }
 
+// 🔹 type effect
 function typeEffect(text) {
     let div = document.createElement("div");
     div.className = "msg bot";
@@ -144,17 +142,29 @@ function typeEffect(text) {
     let interval = setInterval(() => {
         div.innerText += text[i];
         i++;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
         if (i >= text.length) clearInterval(interval);
     }, 20);
 }
 
+// 🔥 send message
 function sendMsg() {
     let input = document.getElementById("msg");
-    let msg = input.value;
+    let msg = input.value.trim();
     if (!msg) return;
 
     addMsg(msg, "user");
     input.value = "";
+
+    // ✅ save user msg
+    db.collection("users")
+      .doc(userId)
+      .collection("messages")
+      .add({
+          text: msg,
+          type: "user",
+          time: Date.now()
+      });
 
     showTyping();
 
@@ -163,9 +173,33 @@ function sendMsg() {
     .then(data => {
         removeTyping();
         typeEffect(data.reply);
+
+        // ✅ save bot msg
+        db.collection("users")
+          .doc(userId)
+          .collection("messages")
+          .add({
+              text: data.reply,
+              type: "bot",
+              time: Date.now()
+          });
     });
 }
 
+// 🔥 load old chats
+db.collection("users")
+  .doc(userId)
+  .collection("messages")
+  .orderBy("time")
+  .get()
+  .then(snapshot => {
+      snapshot.forEach(doc => {
+          let d = doc.data();
+          addMsg(d.text, d.type);
+      });
+  });
+
+// enter key
 document.getElementById("msg").addEventListener("keypress", function(e){
     if(e.key === "Enter"){
         sendMsg();
@@ -204,10 +238,8 @@ def chat():
 
         if last_question:
             brain[last_question] = answer
-
             with open(FILE, "w") as f:
                 json.dump(brain, f)
-
             return jsonify({"reply": "Nerchukunna bro 🔥"})
         else:
             return jsonify({"reply": "Em nerpinchalo ardham kaledhu bro 😅"})
@@ -224,7 +256,6 @@ def chat():
         reply = "slow ga vellali bro… respect important ❤️"
     else:
         reply = "Nak teliyadhu bro 😅 naku nerpinchu (type: teach: your reply)"
-
         with open(LAST, "w") as f:
             f.write(msg)
 

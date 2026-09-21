@@ -80,18 +80,6 @@ button {
 </head>
 
 <body>
-<script>
-
-// 🔥 Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyCOOle74AFX1tWH7X_ESb1e2DXTA5MgHro",
-  authDomain: "sg-bot-1e220.firebaseapp.com",
-  projectId: "sg-bot-1e220",
-  storageBucket: "sg-bot-1e220.firebasestorage.app",
-  messagingSenderId: "925979796012",
-  appId: "1:925979796012:web:1c73b590bd148405ce6789",
-  measurementId: "G-0ZL0RXD3GZ"
-};
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();

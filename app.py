@@ -8,6 +8,10 @@ def home():
     return """
 <html>
 <head>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 
@@ -76,6 +80,31 @@ button {
 </head>
 
 <body>
+<script>
+
+// 🔥 Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyCOOle74AFX1tWH7X_ESb1e2DXTA5MgHro",
+  authDomain: "sg-bot-1e220.firebaseapp.com",
+  projectId: "sg-bot-1e220",
+  storageBucket: "sg-bot-1e220.firebasestorage.app",
+  messagingSenderId: "925979796012",
+  appId: "1:925979796012:web:1c73b590bd148405ce6789",
+  measurementId: "G-0ZL0RXD3GZ"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+
+// 👇 nee code
+let chatDiv = document.getElementById("chat");
+
+function sendMsg() {
+   // existing code
+}
+
+</script>
 
 <div class="chat" id="chat"></div>
 
@@ -85,6 +114,19 @@ button {
 </div>
 
 <script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCOOle74AFX1tWH7X_ESb1e2DXTA5MgHro",
+  authDomain: "sg-bot-1e220.firebaseapp.com",
+  projectId: "sg-bot-1e220",
+  storageBucket: "sg-bot-1e220.firebasestorage.app",
+  messagingSenderId: "925979796012",
+  appId: "1:925979796012:web:1c73b590bd148405ce6789",
+  measurementId: "G-0ZL0RXD3GZ"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 // 🔐 unique user id
 let userId = localStorage.getItem("uid");

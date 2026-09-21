@@ -2,12 +2,11 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-# Simple memory (temporary)
 memory = {}
 
 @app.route("/")
 def home():
-    return "<h1>SG Bot Live 🔥</h1><p>Try /msg?text=na peru Ganesh</p>"
+    return "<h1>SG Bot Live 🔥</h1><p>Try teaching me 😄</p>"
 
 @app.route("/msg")
 def msg():
@@ -18,34 +17,32 @@ def msg():
 
     text = user.lower().strip()
 
-    # Save name
-    if "na peru" in text:
-        name = text.replace("na peru", "").strip()
-        if name:
-            memory["name"] = name
-            return f"Okay {name} 😊 gurthupettukunna"
-        else:
-            return "Mee peru cheppu bro 😄"
-
-    # Recall name
-    elif "na peru enti" in text:
-        if "name" in memory:
-            return f"Nuvvu {memory['name']} kadha 😄"
-        else:
-            return "Naku inka telidhu bro 😅"
-
-    # Greetings
-    elif "hi" in text or "hello" in text or "hey" in text:
-        return "Hello bro 😄"
-
-    # Identity
-    elif "name" in text or "who are you" in text:
+    # 🔴 ALWAYS FIXED IDENTITY (top lo undali)
+    if "name" in text or "who are you" in text or "nee peru" in text:
         return "Naa peru SG-AI-12 bro 🤖"
 
-    else:
-        return "Ardham kaledhu bro 😅"
+    # 🟡 Teach: question = answer
+    if text.startswith("teach:"):
+        try:
+            content = text.replace("teach:", "").strip()
+            q, a = content.split("=")
+            memory[q.strip()] = a.strip()
+            return "Okay bro 😊 nerchukunna"
+        except:
+            return "Format: teach: question = answer"
 
-# Run app
+    # 🟢 Memory check
+    if text in memory:
+        return memory[text]
+
+    # Basic replies
+    if "hi" in text or "hello" in text:
+        return "Hello bro 😄"
+
+    else:
+        return "Naku telidhu bro 😅 naku nerpinchava?"
+        
+
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))

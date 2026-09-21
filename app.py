@@ -153,19 +153,31 @@ function sendMsg() {
     let msg = input.value.trim();
     if (!msg) return;
 
-    addMsg(msg, "user");
     input.value = "";
 
-    // ✅ save user msg
-    db.collection("users")
+    // 🔍 first Firestore lo check chey
+    db.collection("brain")
       .doc(userId)
-      .collection("messages")
-      .add({
-          text: msg,
-          type: "user",
-          time: Date.now()
-      });
+      .collection("pairs")
+      .get()
+      .then(snapshot => {
 
+          let found = false;
+
+          snapshot.forEach(doc => {
+              let d = doc.data();
+
+              if (msg.includes(d.question)) {
+                  addMsg(msg, "user");
+                  typeEffect(d.answer);
+                  found = true;
+              }
+          });
+
+          if (!found) {
+              callBackend(msg);
+              function callBackend(msg){
+    addMsg(msg, "user");
     showTyping();
 
     fetch("/chat?msg=" + encodeURIComponent(msg) + "&uid=" + userId)
@@ -174,15 +186,51 @@ function sendMsg() {
         removeTyping();
         typeEffect(data.reply);
 
-        // ✅ save bot msg
+        // 🧠 save to Firestore
+        db.collection("brain")
+          .doc(userId)
+          .collection("pairs")
+          .add({
+              question: msg,
+              answer: data.reply
+          });
+
+        // 💬 save messages
         db.collection("users")
           .doc(userId)
           .collection("messages")
           .add({
-              text: data.reply,
-              type: "bot",
+              text: msg,
+              type: "user",
               time: Date.now()
           });
+
+        db.collection("users")
+  .doc(userId)
+  .collection("messages")
+  .orderBy("time")
+  .get()
+  .then(snapshot => {
+
+      chatDiv.innerHTML = "";
+
+      let seen = new Set();
+
+      snapshot.forEach(doc => {
+          let d = doc.data();
+          let key = d.text + d.time;
+
+          if (!seen.has(key)) {
+              addMsg(d.text, d.type);
+              seen.add(key);
+          }
+      });
+
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+  });
+          }
+      });
+}
     });
 }
 

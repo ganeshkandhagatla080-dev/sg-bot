@@ -1,1 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SG AI</title>
 
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(180deg, #1e2a44, #0f172a);
+      color: white;
+      overflow: hidden;
+    }
+
+    /* HERO TEXT */
+    .hero {
+      padding: 120px 20px 20px 20px;
+      animation: fadeIn 1s ease;
+    }
+
+    .hero h1 {
+      font-size: 34px;
+      font-weight: 500;
+      margin: 0;
+    }
+
+    .hero p {
+      font-size: 22px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 10px;
+    }
+
+    /* CHAT AREA */
+    .chat {
+      position: absolute;
+      top: 0;
+      bottom: 80px;
+      left: 0;
+      right: 0;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .msg {
+      max-width: 70%;
+      padding: 10px 15px;
+      margin: 8px 0;
+      border-radius: 15px;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background: #2563eb;
+      margin-left: auto;
+    }
+
+    .bot {
+      background: #374151;
+      margin-right: auto;
+    }
+
+    /* INPUT BAR */
+    .input-box {
+      position: fixed;
+      bottom: 15px;
+      left: 10px;
+      right: 10px;
+
+      display: flex;
+      align-items: center;
+
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px);
+
+      border-radius: 40px;
+      padding: 10px 15px;
+    }
+
+    .input-box input {
+      flex: 1;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 16px;
+      outline: none;
+      padding: 8px;
+    }
+
+    .btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      margin-left: 8px;
+      background: rgba(255,255,255,0.1);
+      cursor: pointer;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- CHAT AREA -->
+<div class="chat" id="chat"></div>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <h1>Hi, Siri</h1>
+  <p>How can I help you today?</p>
+</div>
+
+<!-- INPUT -->
+<div class="input-box">
+  <div class="btn">➕</div>
+
+  <input id="msg" type="text" placeholder="Ask me anything..." oninput="toggleBtn()" />
+
+  <div class="btn" id="mic">🎤</div>
+  <div class="btn" id="send" style="display:none;" onclick="sendMsg()">➤</div>
+</div>
+
+<script>
+function toggleBtn() {
+  let val = document.getElementById("msg").value;
+  document.getElementById("mic").style.display = val ? "none" : "flex";
+  document.getElementById("send").style.display = val ? "flex" : "none";
+}
+
+function addMessage(text, type) {
+  let chat = document.getElementById("chat");
+  let div = document.createElement("div");
+  div.className = "msg " + type;
+  div.innerText = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function sendMsg() {
+  let input = document.getElementById("msg");
+  let text = input.value.trim();
+  if (!text) return;
+
+  addMessage(text, "user");
+  input.value = "";
+  toggleBtn();
+
+  // hide hero after first message
+  document.getElementById("hero").style.display = "none";
+
+  fetch(`/chat?msg=${encodeURIComponent(text)}`)
+    .then(res => res.json())
+    .then(data => {
+      addMessage(data.reply, "bot");
+    })
+    .catch(() => {
+      addMessage("Error bro 😅", "bot");
+    });
+}
+</script>
+
+</body>
+</html>

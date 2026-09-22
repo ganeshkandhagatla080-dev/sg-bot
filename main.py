@@ -1,30 +1,41 @@
-from flask import Flask, request, jsonify
-import json, os, requests
+from flask import Flask, request, jsonify, render_template
+import requests, os, sqlite3
 
 app = Flask(__name__)
 
 # =========================
-# 🧠 MEMORY
+# 🧠 DATABASE (PERMANENT MEMORY)
 # =========================
-def load_brain(file):
-    if os.path.exists(file):
-        try:
-            with open(file, "r") as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
+def init_db():
+    conn = sqlite3.connect("brain.db")
+    c = conn.cursor()
+    c.execute("CREATE TABLE IF NOT EXISTS memory (msg TEXT, reply TEXT)")
+    conn.commit()
+    conn.close()
 
-def save_brain(file, brain):
-    with open(file, "w") as f:
-        json.dump(brain, f)
+init_db()
+
+def get_memory(msg):
+    conn = sqlite3.connect("brain.db")
+    c = conn.cursor()
+    c.execute("SELECT reply FROM memory WHERE msg=?", (msg,))
+    row = c.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+def save_memory(msg, reply):
+    conn = sqlite3.connect("brain.db")
+    c = conn.cursor()
+    c.execute("INSERT INTO memory (msg, reply) VALUES (?, ?)", (msg, reply))
+    conn.commit()
+    conn.close()
 
 # =========================
-# 🌐 SEARCH
+# 🌐 GOOGLE SEARCH (SerpAPI)
 # =========================
 def search_online(query):
     try:
-        api_key = "c2d53de70ac9fb9b8788a4ab41dda26ec1da0128d203828ce6bc81a60835eec5"
+        api_key = os.getenv("SERP_API_KEY") or "PASTE_YOUR_API_KEY"
 
         url = f"https://serpapi.com/search.json?q={query}&api_key={api_key}"
         res = requests.get(url).json()
@@ -46,54 +57,44 @@ def search_online(query):
         return "Search error bro 😅"
 
 # =========================
-# 🤖 REPLY
+# 🤖 REPLY LOGIC
 # =========================
 def generate_reply(msg):
-    msg = msg.lower()
+    msg_lower = msg.lower()
 
-    # custom replies
-    if "hi" in msg:
+    # simple replies
+    if "hi" in msg_lower:
         return "Hello bro 😎"
 
-    # 🔥 fallback to search
+    if "siri" in msg_lower:
+        return "😏 Siri garu topic aa bro?"
+
+    # search fallback
     result = search_online(msg)
     return result
 
 # =========================
-# 🚀 CHAT
+# 🚀 CHAT API
 # =========================
 @app.route("/chat")
 def chat():
     msg = request.args.get("msg", "")
-    user_id = request.args.get("uid", "default")
+    
+    # check memory
+    reply = get_memory(msg)
+    if reply:
+        return jsonify({"reply": reply})
 
-    FILE = f"brain_{user_id}.json"
-
-    brain = load_brain(FILE)
-
-    if msg in brain:
-        return jsonify({"reply": brain[msg]})
-
+    # generate new
     reply = generate_reply(msg)
 
-    brain[msg] = reply
-    save_brain(FILE, brain)
+    # save memory
+    save_memory(msg, reply)
 
     return jsonify({"reply": reply})
 
 # =========================
-# 🎤 VOICE
-# =========================
-@app.route("/voice", methods=["POST"])
-def voice():
-    data = request.json
-    text = data.get("text", "")
-
-    reply = generate_reply(text)
-    return jsonify({"reply": reply})
-
-# =========================
-# 🏠 HOME
+# 🏠 HOME (UI later add cheddam)
 # =========================
 @app.route("/")
 def home():

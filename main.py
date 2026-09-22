@@ -76,9 +76,9 @@ def generate_reply(msg):
 # =========================
 # 🚀 CHAT API
 # =========================
-@app.route("/chat")
-def chat():
-    msg = request.args.get("msg", "")
+@app.route("/")
+def home():
+    return render_template("index.html")
     
     # check memory
     reply = get_memory(msg)

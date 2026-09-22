@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 import json, os, requests
 
@@ -25,46 +24,40 @@ def save_brain(file, brain):
 # =========================
 def search_online(query):
     try:
-        url = f"https://api.duckduckgo.com/?q={query}&format=json&no_html=1"
+        api_key = "c2d53de70ac9fb9b8788a4ab41dda26ec1da0128d203828ce6bc81a60835eec5"
+
+        url = f"https://serpapi.com/search.json?q={query}&api_key={api_key}"
         res = requests.get(url).json()
 
-        if res.get("AbstractText"):
-            return res["AbstractText"]
+        if "organic_results" in res:
+            results = res["organic_results"][:3]
 
-        if res.get("Answer"):
-            return res["Answer"]
+            answers = []
+            for r in results:
+                title = r.get("title", "")
+                snippet = r.get("snippet", "")
+                answers.append(f"{title}\n{snippet}")
 
-        if res.get("RelatedTopics"):
-            for item in res["RelatedTopics"]:
-                if isinstance(item, dict) and item.get("Text"):
-                    return item["Text"]
+            return "\n\n".join(answers)
 
-        return None
+        return "Result dorakaledhu bro 😅"
+
     except:
-        return None
+        return "Search error bro 😅"
 
 # =========================
 # 🤖 REPLY
 # =========================
 def generate_reply(msg):
-    msg = msg.lower().strip()
+    msg = msg.lower()
 
-    if msg in ["hi", "hello"]:
-        return "Hello bro 😎 ela unnava?"
+    # custom replies
+    if "hi" in msg:
+        return "Hello bro 😎"
 
-    if "who are you" in msg:
-        return "Nenu SG Bot bro 🤖 neeku help cheyadaniki ready"
-
-    if "siri" in msg:
-        return "😏 Siri garu topic aa bro?"
-
-    # 🌐 fallback search
+    # 🔥 fallback to search
     result = search_online(msg)
-
-    if result:
-        return f"{result}\n\n👉 simple ga cheppali ante bro 😄"
-
-    return "Hmm bro 🤔 naku clear ga teliyadhu 😅 nuv explain chesthava?"
+    return result
 
 # =========================
 # 🚀 CHAT
